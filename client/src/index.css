@@ -1,0 +1,127 @@
+/* Custom Color Palette */
+:root {
+  --primary-color: #4a4a4a;
+  --secondary-color: #6c757d;
+  --accent-color: #007bff;
+  --background-light: #f8f9fa;
+  --text-color: #333;
+}
+
+/* Global Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-light);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+/* Navbar Customization */
+.navbar {
+  background-color: var(--primary-color) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: white !important;
+  transition: color 0.3s ease;
+}
+
+.navbar-brand:hover {
+  color: var(--accent-color) !important;
+}
+
+/* Button Styles */
+.btn-primary {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Card Styles */
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.card-img-top {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  object-fit: cover;
+  height: 250px;
+}
+
+/* Form Styles */
+.form-control {
+  border-radius: 5px;
+  border-color: #ced4da;
+}
+
+.form-control:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+/* Alert Styles */
+.alert-primary {
+  background-color: rgba(0,123,255,0.1);
+  border-color: rgba(0,123,255,0.2);
+  color: #0056b3;
+}
+
+/* Hover Effects */
+.btn, .card, .navbar-brand {
+  transition: all 0.3s ease;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+/* Custom Utilities */
+.bg-light-subtle {
+  background-color: rgba(248, 249, 250, 0.8);
+}
+
+.text-muted-dark {
+  color: #6c757d;
+}
+
+/* Product Card Specific */
+.product-card .badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+/* Cart and Checkout Styles */
+.cart-item {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
