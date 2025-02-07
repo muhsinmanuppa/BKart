@@ -8,9 +8,9 @@ import uploadRoutes from "./routes/uploadRoutes.js"; // Import upload route
 
 // Load environment variables
 dotenv.config();
-
+console.log("no problem before db")
 // Connect to MongoDB
-//connectDB();
+connectDB();
 
 const app = express();
 app.use(express.json());
