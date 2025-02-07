@@ -10,7 +10,7 @@ import uploadRoutes from "./routes/uploadRoutes.js"; // Import upload route
 dotenv.config();
 
 // Connect to MongoDB
-connectDB();
+//connectDB();
 
 const app = express();
 app.use(express.json());
