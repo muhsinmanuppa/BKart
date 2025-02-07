@@ -72,7 +72,6 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// Create a new product
 export const createProduct = async (req, res) => {
   try {
     const { name, category, company, price, description, image } = req.body;
@@ -83,25 +82,12 @@ export const createProduct = async (req, res) => {
     if (!company || company.trim().length < 2) errors.push("Company must be at least 2 characters long");
     if (!price || isNaN(price) || price <= 0) errors.push("Invalid price");
 
-    // Determine the image to use
-    let productImage = "/uploads/default-product.jpg";
-    
-    // If an image was sent in the request, use it
-    if (image && image !== "/uploads/default-product.jpg") {
-      productImage = image;
-    } 
-    // If a file was uploaded, use the file
-    else if (req.file) {
-      productImage = `/uploads/${req.file.filename}`;
-    }
-
     if (errors.length > 0) {
       return res.status(400).json({ message: "Validation failed", errors });
     }
-    
-    if (!productImage || productImage.startsWith("http://localhost:5000/")) {
-      productImage = productImage ? productImage.split("http://localhost:5000")[1] : "/uploads/default-product.jpg";
-    }
+
+    const productImage = image || "https://res.cloudinary.com/dxtynhki3/image/upload/default-product.jpg";
+
     const product = new Product({ 
       name, 
       category, 
