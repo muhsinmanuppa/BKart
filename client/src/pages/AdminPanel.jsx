@@ -134,32 +134,31 @@ function AdminPanel() {
     }
   };
 
-  const handleCrop = async () => {
-    if (!cropperRef.current) return;
-    const cropper = cropperRef.current.cropper;
-    const croppedCanvas = cropper.getCroppedCanvas();
-    if (!croppedCanvas) return;
+  // Update handleCrop function:
+const handleCrop = async () => {
+  if (!cropperRef.current) return;
+  const cropper = cropperRef.current.cropper;
+  const croppedCanvas = cropper.getCroppedCanvas();
+  if (!croppedCanvas) return;
 
-    croppedCanvas.toBlob(async (blob) => {
-      if (!blob) return;
+  croppedCanvas.toBlob(async (blob) => {
+    if (!blob) return;
 
-      const formData = new FormData();
-      formData.append("image", blob, "cropped-image.jpg");
+    const formData = new FormData();
+    formData.append("image", blob, "cropped-image.jpg");
 
-      try {
-        const uploadRes = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/upload`,
-          formData,
-          { headers: { "Content-Type": "multipart/form-data" } }
-        );
-        setImagePath(uploadRes.data.imageUrl);
-        setImageFile(null);
-      } catch (error) {
-        setError(error.response?.data?.message || "Error uploading image");
-        console.error("Error uploading image:", error);
-      }
-    }, "image/jpeg");
-  };
+    try {
+      const uploadRes = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/upload`,
+        formData
+      );
+      setImagePath(uploadRes.data.imageUrl); // Now receives Cloudinary URL
+      setImageFile(null);
+    } catch (error) {
+      setError(error.response?.data?.message || "Error uploading image");
+    }
+  }, "image/jpeg");
+};
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
