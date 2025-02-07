@@ -1,13 +1,14 @@
 import express from "express";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
+import dotenv from "dotenv";
 
 const router = express.Router();
-
+dotenv.config();
 cloudinary.config({
-  cloud_name: "dxtynhki3",
-  api_key: "233111839788775", 
-  api_secret: "DKfTaIqFd7gvGQte7Osohys16Lk"
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 const upload = multer({

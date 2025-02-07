@@ -20,6 +20,10 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes); // Register upload route
 
+app.get("/", (req, res) => {
+    res.send("Server is running...");
+  });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 app.use(cors({ origin: "*", credentials: true }));
