@@ -12,8 +12,10 @@ connectDB();
 
 const app = express();
 app.use(express.json());
+//now not using bcs vercel not support upload image now using cloud
 app.use("/uploads", express.static("uploads")); 
-app.use(cors());
+
+app.use(cors({ origin: "*", credentials: true }));
 
 // API Routes
 app.use("/api/products", productRoutes);
@@ -24,6 +26,8 @@ app.get("/", (req, res) => {
     res.send("Server is running...");
   });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-app.use(cors({ origin: "*", credentials: true }));
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// app.use(cors({ origin: "*", credentials: true }));
+
+export default app;
