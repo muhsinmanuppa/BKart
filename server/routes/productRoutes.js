@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+import path from "path";
 import {
   getProducts,
   getProductById,
@@ -11,20 +12,39 @@ import {
 
 const router = express.Router();
 
-// Use memory storage instead of disk storage
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed."), false);
+// Configure Multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = "uploads/";
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
-  }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Create a cleaner filename
+    const uniqueSuffix = Date.now();
+    const fileExtension = path.extname(file.originalname);
+    cb(null, `product-${uniqueSuffix}${fileExtension}`);
+  },
 });
 
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed."), false);
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
+
+// Define routes using the controller functions
 router.get("/", getProducts);
 router.get("/:id", getProductById);
 router.post("/", upload.single("image"), createProduct);

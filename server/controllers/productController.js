@@ -1,16 +1,46 @@
 import Product from "../models/Product.js";
-import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
+import path from "path";
 
+const backendURL = process.env.BACKEND_URL || "http://localhost:5000";
+
+// Utility function to format image URL
+const formatImageURL = (imagePath) => {
+  if (!imagePath) return "/uploads/default-product.jpg";
+  return imagePath.startsWith("http") 
+    ? imagePath 
+    : `${backendURL}${imagePath}`;
+};
+
+// Utility function to remove old image files
+const removeOldImage = (imagePath) => {
+  if (imagePath && !imagePath.includes('default-product.jpg')) {
+    const fullPath = path.resolve(process.cwd(), imagePath.replace(/^\//, ''));
+    if (fs.existsSync(fullPath)) {
+      try {
+        fs.unlinkSync(fullPath);
+      } catch (error) {
+        console.error("Error removing old image:", error);
+      }
+    }
+  }
+};
+
+// Get all products
 // Get all products with optional filtering
 export const getProducts = async (req, res) => {
   try {
     const { category, search } = req.query;
+    
+    // Build filter object
     let filter = {};
     
+    // Add category filter if provided
     if (category) {
       filter.category = category;
     }
     
+    // Add search filter if provided
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -19,29 +49,32 @@ export const getProducts = async (req, res) => {
       ];
     }
     
+    // Find products with filter
     const products = await Product.find(filter).sort({ createdAt: -1 });
-    res.json(products);
+    
+    res.json(products.map(product => ({
+      ...product._doc,
+      image: formatImageURL(product.image)
+    })));
   } catch (error) {
     res.status(500).json({ message: "Error fetching products", error: error.message });
   }
 };
 
+// Get product by ID
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    res.json(product);
+    res.json({ ...product._doc, image: formatImageURL(product.image) });
   } catch (error) {
-    res.status(error.kind === 'ObjectId' ? 400 : 500).json({ 
-      message: error.kind === 'ObjectId' ? "Invalid product ID" : "Error fetching product", 
-      error: error.message 
-    });
+    res.status(error.kind === 'ObjectId' ? 400 : 500).json({ message: error.kind === 'ObjectId' ? "Invalid product ID" : "Error fetching product", error: error.message });
   }
 };
 
 export const createProduct = async (req, res) => {
   try {
-    const { name, category, company, price, description } = req.body;
+    const { name, category, company, price, description, image } = req.body;
 
     const errors = [];
     if (!name || name.trim().length < 2) errors.push("Name must be at least 2 characters long");
@@ -53,17 +86,7 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Validation failed", errors });
     }
 
-    let imageUrl = "https://res.cloudinary.com/dxtynhki3/image/upload/default-product.jpg";
-
-    // If there's a file, upload to Cloudinary
-    if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-      const uploadResult = await cloudinary.uploader.upload(dataURI, {
-        resource_type: "auto"
-      });
-      imageUrl = uploadResult.secure_url;
-    }
+    const productImage = image || "https://res.cloudinary.com/dxtynhki3/image/upload/default-product.jpg";
 
     const product = new Product({ 
       name, 
@@ -71,7 +94,7 @@ export const createProduct = async (req, res) => {
       company, 
       price: parseFloat(price), 
       description: description || '', 
-      image: imageUrl
+      image: productImage
     });
     
     const savedProduct = await product.save();
@@ -80,14 +103,14 @@ export const createProduct = async (req, res) => {
     res.status(500).json({ message: "Error creating product", error: error.message });
   }
 };
-
+// Update product
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, category, company, price, description } = req.body;
     const product = await Product.findById(id);
-    
     if (!product) {
+      if (req.file) removeOldImage(`/uploads/${req.file.filename}`);
       return res.status(404).json({ message: "Product not found" });
     }
 
@@ -98,50 +121,29 @@ export const updateProduct = async (req, res) => {
     if (!price || isNaN(price) || price <= 0) errors.push("Invalid price");
 
     if (errors.length > 0) {
+      if (req.file) removeOldImage(`/uploads/${req.file.filename}`);
       return res.status(400).json({ message: "Validation failed", errors });
     }
 
-    // If there's a new file, upload to Cloudinary
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-      const uploadResult = await cloudinary.uploader.upload(dataURI, {
-        resource_type: "auto"
-      });
-      product.image = uploadResult.secure_url;
+      removeOldImage(product.image);
+      product.image = `/uploads/${req.file.filename}`;
     }
 
-    Object.assign(product, { 
-      name, 
-      category, 
-      company, 
-      price: parseFloat(price), 
-      description: description || product.description 
-    });
-    
-    const updatedProduct = await product.save();
-    res.json(updatedProduct);
+    Object.assign(product, { name, category, company, price: parseFloat(price), description: description || product.description });
+    res.json({ ...await product.save(), image: formatImageURL(product.image) });
   } catch (error) {
+    if (req.file) removeOldImage(`/uploads/${req.file.filename}`);
     res.status(500).json({ message: "Error updating product", error: error.message });
   }
 };
 
+// Delete product
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    
-    // If using Cloudinary and want to delete the image:
-    if (product.image && !product.image.includes('default-product.jpg')) {
-      // Extract public_id from Cloudinary URL if needed
-      const publicId = product.image.split('/').slice(-1)[0].split('.')[0];
-      try {
-        await cloudinary.uploader.destroy(publicId);
-      } catch (error) {
-        console.error("Error deleting image from Cloudinary:", error);
-      }
-    }
-    
+    removeOldImage(product.image);
     await product.deleteOne();
     res.json({ message: "Product removed successfully" });
   } catch (error) {

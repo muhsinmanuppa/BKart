@@ -2,95 +2,55 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+
+
 export const loginUser = async (req, res) => {
-  const { username, password } = req.body;  // Changed from email to username to match model
+  const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is not defined");
-    }
-
-    const token = jwt.sign(
-      { id: user._id, isAdmin: user.isAdmin }, 
-      process.env.JWT_SECRET, 
-      { expiresIn: "1h" }
-    );
-
-    res.json({ 
-      token, 
-      user: { 
-        id: user._id, 
-        username: user.username, 
-        isAdmin: user.isAdmin 
-      } 
-    });
+    const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    res.json({ token, user: { id: user._id, username: user.username, isAdmin: user.isAdmin } });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
-      message: "Server error", 
-      error: error.message 
-    });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
 export const updatePassword = async (req, res) => {
-  const { username, newPassword } = req.body;
+  const { username, newPassword } = req.body; // Only username and newPassword are needed
 
   try {
-    if (!username || !newPassword) {
-      return res.status(400).json({ 
-        message: "Username and new password are required" 
-      });
-    }
-
-    // Password validation
-    if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        message: "Password must be at least 6 characters long" 
-      });
-    }
-
+    // Check if the user exists
     let user = await User.findOne({ username });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-
     if (!user) {
-      // Create new user
+      // If the user doesn't exist, create a new user without email
       user = new User({
         username,
-        password: hashedPassword,
-        isAdmin: false
+        password: newPassword, // Initially setting the password to newPassword
+        isAdmin: false // Adjust if needed
       });
-    } else {
-      // Update existing user's password
-      user.password = hashedPassword;
+
+      // Hash the new password before saving
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+
+      await user.save();
+      return res.status(201).json({ message: "New user created and password set successfully!" });
     }
 
+    // If user exists, update the password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
     await user.save();
-    
-    res.json({ 
-      message: user.isNew 
-        ? "New user created successfully" 
-        : "Password updated successfully" 
-    });
+    res.json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error('Update password error:', error);
-    res.status(500).json({ 
-      message: "Server error", 
-      error: error.message 
-    });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-export default { loginUser, updatePassword };

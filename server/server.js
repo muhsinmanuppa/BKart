@@ -8,15 +8,28 @@ import uploadRoutes from "./routes/uploadRoutes.js"; // Import upload route
 
 // Load environment variables
 dotenv.config();
-console.log("no problem before db")
+console.log("🟢 Environment variables loaded.");
+
 // Connect to MongoDB
-connectDB();
+connectDB()
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((error) => console.error("❌ MongoDB Connection Error:", error));
 
 const app = express();
+
+// Middleware
 app.use(express.json());
 
-// Enable CORS for all origins
-app.use(cors({ origin: "*", credentials: true }));
+// Enable CORS for frontend
+const allowedOrigins = ["https://client-six-ebon.vercel.app"]; // Update with your frontend URL
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true,
+    allowedHeaders: "Content-Type,Authorization",
+  })
+);
 
 // API Routes
 app.use("/api/products", productRoutes);
@@ -25,8 +38,13 @@ app.use("/api/upload", uploadRoutes); // Register upload route
 
 // Root route for health check
 app.get("/", (req, res) => {
-  res.send("Server is running...");
+  res.send("🟢 Server is running...");
 });
 
-// Export app for Vercel (No need for app.listen in Serverless deployment)
+// Handle unknown routes
+app.use((req, res) => {
+  res.status(404).json({ message: "❌ API route not found!" });
+});
+
+// Export app for Vercel (No app.listen needed)
 export default app;
