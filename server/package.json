@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'No build step required'",
-    "vercel-build": "npm install"
+    "dev": "nodemon server.js",
+    "build": "npm install",
+    "vercel-build": "echo 'build completed'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
