@@ -15,17 +15,8 @@ const connectDB = async () => {
       console.log('❌ MongoDB disconnected');
     });
 
-    mongoose.connection.on('connected', async () => {
+    mongoose.connection.on('connected', () => {
       console.log('🟢 DB connected');
-
-      // Insert a dummy record
-      try {
-        const Dummy = mongoose.model("Dummy", new mongoose.Schema({ name: String }));
-        await Dummy.create({ name: "Test Entry" });
-        console.log("✅ Dummy data inserted");
-      } catch (error) {
-        console.error("❌ Failed to insert dummy data:", error.message);
-      }
     });
 
     const conn = await mongoose.connect(process.env.MONGO_URI, {
