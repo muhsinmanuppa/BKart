@@ -15,20 +15,30 @@ let dbConnected = false; // Track DB connection status
 app.use(express.json());
 app.use(express.static("public"));
 
-// CORS Configuration
-app.use(cors({
-  origin: [
-    "https://b-kart.vercel.app",
-    "https://b-kart-server.vercel.app",
-    "http://localhost:5173",
-    "https://b-kart-nine.vercel.app"
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-}));
+// ✅ Apply CORS Middleware before defining routes
+const allowedOrigins = [
+  "https://b-kart.vercel.app",
+  "https://b-kart-server.vercel.app",
+  "http://localhost:5173",
+  "https://b-kart-nine.vercel.app"
+];
 
-app.options('*', cors());
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 // Define routes
 app.use("/api/products", productRoutes);
@@ -43,10 +53,14 @@ app.get("/", (req, res) => {
   });
 });
 
-// Global Error Handler
+// ✅ Ensure CORS headers are sent in error responses
 app.use((err, req, res, next) => {
   console.error('❌ Global Error Handler:', err);
-  res.status(500).json({ message: "Internal Server Error", details: err.message });
+
+  res.status(500).json({ 
+    message: "Internal Server Error", 
+    details: err.message 
+  });
 });
 
 // Handle unknown routes
