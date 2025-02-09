@@ -7,13 +7,13 @@ const connectDB = async () => {
       return;
     }
 
-    await mongoose.connect(process.env.MONGO_URI, {
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       bufferCommands: true, // Allow commands to be buffered until the connection is ready
     });
 
-    console.log("✅ MongoDB Connected Successfully");
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
     throw error; // Prevent server startup if DB connection fails
