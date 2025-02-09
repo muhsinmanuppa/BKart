@@ -44,51 +44,78 @@ export const loginUser = async (req, res) => {
 };
 
 export const updatePassword = async (req, res) => {
+  console.log('📍 Starting password update process');
   const { username, newPassword } = req.body;
 
   try {
+    // Check MongoDB connection status
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ MongoDB not connected. Current state:', mongoose.connection.readyState);
+      throw new Error('Database connection not available');
+    }
+
+    console.log('✅ MongoDB connection verified');
+
+    // Log request data (without sensitive info)
+    console.log('📝 Update request for username:', username);
+
     if (!username || !newPassword) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ 
         message: "Username and new password are required" 
       });
     }
 
-    // Password validation
-    if (newPassword.length < 6) {
-      return res.status(400).json({ 
-        message: "Password must be at least 6 characters long" 
-      });
+    // Find user
+    console.log('🔍 Finding user in database...');
+    const user = await User.findOne({ username }).exec();
+    
+    if (!user) {
+      console.log('❌ User not found:', username);
+      return res.status(404).json({ message: "User not found" });
     }
 
-    let user = await User.findOne({ username });
+    console.log('✅ User found, generating password hash...');
 
+    // Hash new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    if (!user) {
-      // Create new user
-      user = new User({
-        username,
-        password: hashedPassword,
-        isAdmin: false
-      });
-    } else {
-      // Update existing user's password
-      user.password = hashedPassword;
-    }
-
+    // Update user's password
+    user.password = hashedPassword;
+    console.log('💾 Saving updated password...');
+    
     await user.save();
     
-    res.json({ 
-      message: user.isNew 
-        ? "New user created successfully" 
-        : "Password updated successfully" 
-    });
+    console.log('✅ Password updated successfully');
+    res.json({ message: "Password updated successfully" });
+
   } catch (error) {
-    console.error('Update password error:', error);
+    console.error('❌ Password update error:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+
+    // Handle specific MongoDB errors
+    if (error.name === 'MongoServerError') {
+      return res.status(500).json({
+        message: "Database error",
+        details: error.message
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: "Validation error",
+        details: error.message
+      });
+    }
+
     res.status(500).json({ 
-      message: "Server error", 
-      error: error.message 
+      message: "Server error while updating password",
+      details: error.message
     });
   }
 };

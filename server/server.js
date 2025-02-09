@@ -55,5 +55,23 @@ connectDB()
     process.exit(1);
   });
 
+  // Add this before your routes
+app.use((err, req, res, next) => {
+  console.error('❌ Global Error Handler:', {
+    path: req.path,
+    method: req.method,
+    error: {
+      name: err.name,
+      message: err.message,
+      stack: err.stack
+    }
+  });
+
+  res.status(500).json({
+    message: "Internal Server Error",
+    details: err.message
+  });
+});
+
 // 🚀 Export the app for Vercel (No need to use app.listen)
 export default app;

@@ -28,6 +28,7 @@ function Login() {
   };
 
   // Handle Password Reset
+  // Handle Password Reset
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -35,14 +36,17 @@ function Login() {
       return;
     }
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/users/update-password`, {
-        username: "admin",  // Static username, change if dynamic
-        newPassword,        // Only send newPassword
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/api/users/update-password`, {
+        username: "admin",
+        newPassword,
       });
-      alert("Password updated successfully!");
+      alert(response.data.message);
       setShowResetForm(false);
     } catch (err) {
-      alert("Error updating password");
+      // More detailed error handling
+      const errorMessage = err.response?.data?.message || err.message || "Error updating password";
+      alert(errorMessage);
+      console.error("Password update error:", err.response?.data || err);
     }
   };
 
