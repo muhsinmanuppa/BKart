@@ -12,13 +12,10 @@ function AdminPanel() {
     price: "",
     description: "",
   });
-
-  // New state for error handling
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
   const [imageFile, setImageFile] = useState(null);
-  const [imagePath, setImagePath] = useState(null);
+  const [croppedBlob, setCroppedBlob] = useState(null);  // New state for storing the cropped image blob
   const cropperRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -43,7 +40,6 @@ function AdminPanel() {
   const validateForm = () => {
     const { name, category, company, price } = newProduct;
     
-    // More detailed validation
     if (!name || name.trim().length < 2) {
       return "Product name must be at least 2 characters long";
     }
@@ -56,8 +52,8 @@ function AdminPanel() {
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
       return "Please enter a valid positive price";
     }
-    if (!imagePath) {
-      return "Please upload an image";
+    if (!croppedBlob) {  // Changed from imagePath to croppedBlob
+      return "Please upload and crop an image";
     }
     
     return null;
@@ -82,10 +78,9 @@ function AdminPanel() {
       formData.append('price', newProduct.price);
       formData.append('description', newProduct.description || '');
       
-      // If an image has been cropped and uploaded
-      if (imagePath) {
-        // Send the image path from the previous upload
-        formData.append('image', imagePath);
+      // Append the cropped image blob with a filename
+      if (croppedBlob) {
+        formData.append('image', croppedBlob, 'product-image.jpg');
       }
   
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/products`, formData, {
@@ -96,9 +91,11 @@ function AdminPanel() {
       
       // Reset form and states
       setNewProduct({ name: "", category: "", company: "", price: "", description: "" });
-      setImagePath(null);
+      setCroppedBlob(null);
       setImageFile(null);
-      fileInputRef.current.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
   
       alert("Product added successfully!");
     } catch (err) {
@@ -112,7 +109,6 @@ function AdminPanel() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type and size
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
       const maxSize = 5 * 1024 * 1024; // 5MB
 
@@ -134,31 +130,18 @@ function AdminPanel() {
     }
   };
 
-  // Update handleCrop function:
-const handleCrop = async () => {
-  if (!cropperRef.current) return;
-  const cropper = cropperRef.current.cropper;
-  const croppedCanvas = cropper.getCroppedCanvas();
-  if (!croppedCanvas) return;
+  const handleCrop = async () => {
+    if (!cropperRef.current) return;
+    const cropper = cropperRef.current.cropper;
+    const croppedCanvas = cropper.getCroppedCanvas();
+    
+    if (!croppedCanvas) return;
 
-  croppedCanvas.toBlob(async (blob) => {
-    if (!blob) return;
-
-    const formData = new FormData();
-    formData.append("image", blob, "cropped-image.jpg");
-
-    try {
-      const uploadRes = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/upload`,
-        formData
-      );
-      setImagePath(uploadRes.data.imageUrl); // Now receives Cloudinary URL
-      setImageFile(null);
-    } catch (error) {
-      setError(error.response?.data?.message || "Error uploading image");
-    }
-  }, "image/jpeg");
-};
+    croppedCanvas.toBlob((blob) => {
+      if (!blob) return;
+      setCroppedBlob(blob);  // Store the blob directly instead of uploading
+    }, 'image/jpeg', 0.9);
+  };
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
@@ -182,7 +165,6 @@ const handleCrop = async () => {
       <h2>Admin Dashboard</h2>
       <p>Manage products here.</p>
 
-      {/* Error handling */}
       {error && (
         <div className="alert alert-danger" role="alert">
           {error}
@@ -231,11 +213,11 @@ const handleCrop = async () => {
                   onClick={handleCrop}
                   disabled={isLoading}
                 >
-                  Crop & Upload
+                  Crop Image
                 </button>
               </div>
             )}
-            {imagePath && <p className="text-success">Image uploaded successfully!</p>}
+            {croppedBlob && <p className="text-success">Image cropped successfully!</p>}
           </div>
 
           <button 
