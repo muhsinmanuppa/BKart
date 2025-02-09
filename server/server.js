@@ -13,9 +13,19 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
+const allowedOrigins = [
+  process.env.CLIENT_URL, // Read from .env
+  "http://localhost:3000" // Include localhost for development
+];
+
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
@@ -23,6 +33,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
 
 
 connectDB()
