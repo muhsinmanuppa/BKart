@@ -44,78 +44,47 @@ export const loginUser = async (req, res) => {
 };
 
 export const updatePassword = async (req, res) => {
-  console.log('📍 Starting password update process');
-  const { username, newPassword } = req.body;
-
   try {
-    // Check MongoDB connection status
-    if (mongoose.connection.readyState !== 1) {
-      console.error('❌ MongoDB not connected. Current state:', mongoose.connection.readyState);
-      throw new Error('Database connection not available');
-    }
+    // Set CORS headers explicitly
+    res.header('Access-Control-Allow-Origin', 'https://b-kart-nine.vercel.app');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    console.log('✅ MongoDB connection verified');
+    const { username, newPassword } = req.body;
 
-    // Log request data (without sensitive info)
-    console.log('📝 Update request for username:', username);
-
+    // Validate input
     if (!username || !newPassword) {
-      console.log('❌ Missing required fields');
       return res.status(400).json({ 
         message: "Username and new password are required" 
       });
     }
 
     // Find user
-    console.log('🔍 Finding user in database...');
-    const user = await User.findOne({ username }).exec();
-    
+    const user = await User.findOne({ username });
     if (!user) {
-      console.log('❌ User not found:', username);
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log('✅ User found, generating password hash...');
-
-    // Hash new password
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Update user's password
+    // Update user
     user.password = hashedPassword;
-    console.log('💾 Saving updated password...');
-    
     await user.save();
-    
-    console.log('✅ Password updated successfully');
-    res.json({ message: "Password updated successfully" });
 
+    return res.json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error('❌ Password update error:', {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
-
-    // Handle specific MongoDB errors
-    if (error.name === 'MongoServerError') {
-      return res.status(500).json({
-        message: "Database error",
-        details: error.message
-      });
-    }
-
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        message: "Validation error",
-        details: error.message
-      });
-    }
-
-    res.status(500).json({ 
+    console.error('Password update error:', error);
+    
+    // Set CORS headers even in error case
+    res.header('Access-Control-Allow-Origin', 'https://b-kart-nine.vercel.app');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return res.status(500).json({ 
       message: "Server error while updating password",
-      details: error.message
+      error: error.message
     });
   }
 };

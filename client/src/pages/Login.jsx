@@ -36,17 +36,27 @@ function Login() {
       return;
     }
     try {
-      const response = await axios.put(`${import.meta.env.VITE_API_URL}/api/users/update-password`, {
-        username: "admin",
-        newPassword,
-      });
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_URL}/api/users/update-password`,
+        {
+          username: "admin",
+          newPassword,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
       alert(response.data.message);
       setShowResetForm(false);
     } catch (err) {
-      // More detailed error handling
-      const errorMessage = err.response?.data?.message || err.message || "Error updating password";
+      console.error("Update password error:", err);
+      const errorMessage = err.response?.data?.message || 
+                          err.message || 
+                          "Error updating password";
       alert(errorMessage);
-      console.error("Password update error:", err.response?.data || err);
     }
   };
 

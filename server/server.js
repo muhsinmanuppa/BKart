@@ -19,13 +19,15 @@ app.use(cors({
     "https://b-kart.vercel.app", 
     "https://b-kart-server.vercel.app", 
     "http://localhost:5173",
-    "https://b-kart-nine.vercel.app"  // Add this line
+    "https://b-kart-nine.vercel.app"
   ],
-
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+// Add pre-flight OPTIONS handler
+app.options('*', cors());
 
 // Define routes
 app.use("/api/products", productRoutes);
@@ -36,13 +38,30 @@ app.get("/", (req, res) => {
   res.send("🟢 Server is running...");
 });
 
-// Global Error Handler
+// Global Error Handler - KEEP THIS ONE, REMOVE THE OTHER ONE
 app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.message);
-  res.status(500).json({ message: "Internal Server Error" });
+  console.error('❌ Global Error Handler:', {
+    path: req.path,
+    method: req.method,
+    error: {
+      name: err.name,
+      message: err.message,
+      stack: err.stack
+    }
+  });
+
+  // Set CORS headers
+  res.header('Access-Control-Allow-Origin', 'https://b-kart-nine.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  res.status(500).json({
+    message: "Internal Server Error",
+    details: err.message
+  });
 });
 
-// Handle unknown routes
+// Handle unknown routes - This should come after error handler
 app.use((req, res) => {
   res.status(404).json({ message: "❌ API route not found!" });
 });
@@ -55,23 +74,5 @@ connectDB()
     process.exit(1);
   });
 
-  // Add this before your routes
-app.use((err, req, res, next) => {
-  console.error('❌ Global Error Handler:', {
-    path: req.path,
-    method: req.method,
-    error: {
-      name: err.name,
-      message: err.message,
-      stack: err.stack
-    }
-  });
-
-  res.status(500).json({
-    message: "Internal Server Error",
-    details: err.message
-  });
-});
-
-// 🚀 Export the app for Vercel (No need to use app.listen)
+// 🚀 Export the app for Vercel
 export default app;
