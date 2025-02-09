@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-// CORS Configuration (Allowing Vercel & Localhost)
+// CORS Configuration
 app.use(cors({
   origin: [
     "https://b-kart.vercel.app", 
@@ -26,7 +26,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Add pre-flight OPTIONS handler
 app.options('*', cors());
 
 // Define routes
@@ -38,41 +37,30 @@ app.get("/", (req, res) => {
   res.send("🟢 Server is running...");
 });
 
-// Global Error Handler - KEEP THIS ONE, REMOVE THE OTHER ONE
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('❌ Global Error Handler:', {
-    path: req.path,
-    method: req.method,
-    error: {
-      name: err.name,
-      message: err.message,
-      stack: err.stack
-    }
-  });
-
-  // Set CORS headers
-  res.header('Access-Control-Allow-Origin', 'https://b-kart-nine.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  res.status(500).json({
-    message: "Internal Server Error",
-    details: err.message
-  });
+  console.error('❌ Global Error Handler:', err);
+  res.status(500).json({ message: "Internal Server Error", details: err.message });
 });
 
-// Handle unknown routes - This should come after error handler
+// Handle unknown routes
 app.use((req, res) => {
   res.status(404).json({ message: "❌ API route not found!" });
 });
 
-// Connect to database
+// Connect to database & Start server
 connectDB()
-  .then(() => console.log("✅ Database connected successfully."))
+  .then(() => {
+    console.log("✅ Database connected successfully.");
+    
+    // Start the server only after DB is connected
+    app.listen(5000, () => {
+      console.log("🟢 Server is running on port 5000");
+    });
+  })
   .catch((err) => {
     console.error("❌ Database connection failed:", err);
     process.exit(1);
   });
 
-// 🚀 Export the app for Vercel
 export default app;

@@ -7,7 +7,6 @@ const connectDB = async () => {
       return mongoose.connection;
     }
 
-    // Add event listeners for connection
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
     });
@@ -16,25 +15,29 @@ const connectDB = async () => {
       console.log('❌ MongoDB disconnected');
     });
 
-    mongoose.connection.on('connected', () => {
-      console.log('✅ MongoDB connected');
+    mongoose.connection.on('connected', async () => {
+      console.log('🟢 DB connected');
+
+      // Insert a dummy record
+      try {
+        const Dummy = mongoose.model("Dummy", new mongoose.Schema({ name: String }));
+        await Dummy.create({ name: "Test Entry" });
+        console.log("✅ Dummy data inserted");
+      } catch (error) {
+        console.error("❌ Failed to insert dummy data:", error.message);
+      }
     });
 
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 5000,
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
-    console.error('❌ MongoDB Connection Error Details:', {
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
+    console.error("❌ MongoDB Connection Error:", error.message);
     process.exit(1);
   }
 };
