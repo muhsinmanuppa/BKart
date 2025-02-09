@@ -1,11 +1,28 @@
 import mongoose from "mongoose";
 
+// Cache the database connection
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
 const connectDB = async () => {
-  try {
-    if (mongoose.connection.readyState === 1) {
-      console.log("✅ Using existing MongoDB connection");
-      return mongoose.connection;
-    }
+  if (cached.conn) {
+    console.log("✅ Using existing MongoDB connection");
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      bufferCommands: false,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4
+    };
 
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
@@ -13,23 +30,32 @@ const connectDB = async () => {
 
     mongoose.connection.on('disconnected', () => {
       console.log('❌ MongoDB disconnected');
+      cached.conn = null;
+      cached.promise = null;
     });
 
     mongoose.connection.on('connected', () => {
       console.log('🟢 DB connected');
     });
 
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
-    });
+    try {
+      cached.promise = mongoose.connect(process.env.MONGO_URI, opts);
+    } catch (error) {
+      console.error("❌ MongoDB Connection Error:", error.message);
+      cached.conn = null;
+      cached.promise = null;
+      throw error;
+    }
+  }
 
-    return conn;
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
   } catch (error) {
     console.error("❌ MongoDB Connection Error:", error.message);
-    process.exit(1);
+    cached.conn = null;
+    cached.promise = null;
+    throw error;
   }
 };
 
