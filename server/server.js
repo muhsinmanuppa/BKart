@@ -15,7 +15,13 @@ app.use(express.static("public"));
 
 // CORS Configuration (Allowing Vercel & Localhost)
 app.use(cors({
-  origin: ["https://b-kart.vercel.app", "https://b-kart-server.vercel.app", "http://localhost:5173"],
+  origin: [
+    "https://b-kart.vercel.app", 
+    "https://b-kart-server.vercel.app", 
+    "http://localhost:5173",
+    "https://b-kart-nine.vercel.app"  // Add this line
+  ],
+
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
