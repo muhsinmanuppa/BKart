@@ -1,13 +1,14 @@
 {
   "name": "bkart-server",
   "version": "1.0.0",
-  "main": "api/server.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node api/server.js",
-    "dev": "nodemon api/server.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "vercel-build": "npm install && echo '✅ Vercel Build Complete'",
-    "preinstall": "npx npm@latest install -g"
+    "preinstall": "npm install"
+
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -23,7 +24,9 @@
   "devDependencies": {
     "nodemon": "^3.1.9"
   },
-  "engines": {
-    "node": "18.x"
-  }
+"engines": {
+  "node": "20.x",
+  "npm": "10.x"
+}
+
 }
