@@ -10,46 +10,43 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
 app.use(express.json());
-app.use(express.static('public')); // Add this line
+app.use(express.static("public"));
 
-
-
-// CORS Configuration
+const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:3000"];
 const corsOptions = {
-  origin: ['https://client-six-ebon.vercel.app', 'http://localhost:5000'],
+  origin: allowedOrigins,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
 
-// Connect to MongoDB
+
 connectDB()
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((error) => console.error("❌ MongoDB Connection Error:", error));
 
-// API Routes
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
-// Root route for health check
 app.get("/", (req, res) => {
   res.send("🟢 Server is running...");
 });
-app.get('/favicon.ico', (req, res) => {
-  res.status(204).end(); // No content response
+
+app.get("/favicon.ico", (req, res) => {
+  res.status(204).end();
 });
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     message: "Internal Server Error",
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    error: process.env.NODE_ENV === "development" ? err.message : undefined
   });
 });
 
@@ -58,10 +55,5 @@ app.use((req, res) => {
   res.status(404).json({ message: "❌ API route not found!" });
 });
 
-// Add this for Vercel
-const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}
-
+// Export for Vercel
 export default app;
