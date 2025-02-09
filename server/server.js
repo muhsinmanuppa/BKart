@@ -9,6 +9,8 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 dotenv.config();
 const app = express();
 
+let dbConnected = false; // Track DB connection status
+
 // Middleware
 app.use(express.json());
 app.use(express.static("public"));
@@ -33,8 +35,12 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
+// Root Route - Show Server & DB Status
 app.get("/", (req, res) => {
-  res.send("🟢 Server is running...");
+  res.json({
+    message: "🟢 Server is running...",
+    dbStatus: dbConnected ? "🟢 DB connected" : "❌ DB not connected"
+  });
 });
 
 // Global Error Handler
@@ -51,8 +57,9 @@ app.use((req, res) => {
 // Connect to database & Start server
 connectDB()
   .then(() => {
+    dbConnected = true;
     console.log("✅ Database connected successfully.");
-    
+
     // Start the server only after DB is connected
     app.listen(5000, () => {
       console.log("🟢 Server is running on port 5000");
