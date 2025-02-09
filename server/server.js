@@ -18,8 +18,8 @@ app.use(express.static("public"));
 // CORS Configuration
 app.use(cors({
   origin: [
-    "https://b-kart.vercel.app", 
-    "https://b-kart-server.vercel.app", 
+    "https://b-kart.vercel.app",
+    "https://b-kart-server.vercel.app",
     "http://localhost:5173",
     "https://b-kart-nine.vercel.app"
   ],
@@ -54,20 +54,15 @@ app.use((req, res) => {
   res.status(404).json({ message: "❌ API route not found!" });
 });
 
-// Connect to database & Start server
+// Connect to database
 connectDB()
   .then(() => {
     dbConnected = true;
     console.log("✅ Database connected successfully.");
-
-    // Start the server only after DB is connected
-    app.listen(5000, () => {
-      console.log("🟢 Server is running on port 5000");
-    });
   })
   .catch((err) => {
     console.error("❌ Database connection failed:", err);
-    process.exit(1);
   });
 
+// ✅ REMOVE `app.listen(5000, ...)` for Vercel
 export default app;
