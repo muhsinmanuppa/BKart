@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "./config/db.js";
+import connectDB from "./config/db.js";  // Path remains same
 import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
@@ -12,18 +12,16 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-const allowedOrigins = [process.env.CLIENT_URL || "http://localhost:5000"];
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: process.env.CLIENT_URL || "http://localhost:5000",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
 
-// Connect DB before handling requests
+// Ensure DB is connected
 await connectDB();
 
 // Define routes
@@ -34,8 +32,6 @@ app.use("/api/upload", uploadRoutes);
 app.get("/", (req, res) => {
   res.send("🟢 Server is running...");
 });
-
-app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -51,6 +47,5 @@ app.use((req, res) => {
   res.status(404).json({ message: "❌ API route not found!" });
 });
 
-// 🔹 ❌ Remove `app.listen()` for Vercel
-// Instead, export the app:
+// 🚀 Do not use `app.listen()` for Vercel
 export default app;
